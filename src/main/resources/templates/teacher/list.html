@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教師管理 - 學生信息管理系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 2px 10px;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .search-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .teacher-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .teacher-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .pagination .page-link {
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 側邊欄 -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-graduation-cap fa-2x text-white mb-2"></i>
+                        <h5 class="text-white">學生信息管理系統</h5>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                儀表板
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/students">
+                                <i class="fas fa-users me-2"></i>
+                                學生管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/teachers">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>
+                                教師管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/classes">
+                                <i class="fas fa-school me-2"></i>
+                                班級管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/courses">
+                                <i class="fas fa-book me-2"></i>
+                                課程管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/grades">
+                                <i class="fas fa-chart-line me-2"></i>
+                                成績管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/attendance">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                考勤管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reports">
+                                <i class="fas fa-file-alt me-2"></i>
+                                報表統計
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- 主要內容 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- 頂部導航欄 -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded-3 mt-3">
+                    <div class="container-fluid">
+                        <span class="navbar-brand">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>
+                            教師管理
+                        </span>
+                        <div class="navbar-nav ms-auto">
+                            <span class="navbar-text me-3">
+                                <i class="fas fa-user me-1"></i>
+                                <span th:text="${#authentication.name}">用戶名</span>
+                            </span>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-sign-out-alt me-1"></i>
+                                    登出
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- 搜索和操作區域 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="search-card p-4">
+                            <form th:action="@{/teachers}" method="get" class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="name" class="form-label">姓名</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           th:value="${searchName}" placeholder="輸入教師姓名">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="teacherNumber" class="form-label">工號</label>
+                                    <input type="text" class="form-control" id="teacherNumber" name="teacherNumber" 
+                                           th:value="${searchTeacherNumber}" placeholder="輸入工號">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="title" class="form-label">職稱</label>
+                                    <select class="form-select" id="title" name="title">
+                                        <option value="">全部職稱</option>
+                                        <option value="ASSISTANT" th:selected="${searchTitle == 'ASSISTANT'}">助教</option>
+                                        <option value="LECTURER" th:selected="${searchTitle == 'LECTURER'}">講師</option>
+                                        <option value="ASSOCIATE_PROFESSOR" th:selected="${searchTitle == 'ASSOCIATE_PROFESSOR'}">副教授</option>
+                                        <option value="PROFESSOR" th:selected="${searchTitle == 'PROFESSOR'}">教授</option>
+                                        <option value="DISTINGUISHED_PROFESSOR" th:selected="${searchTitle == 'DISTINGUISHED_PROFESSOR'}">特聘教授</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search me-1"></i>
+                                            搜索
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <a href="/teachers/new" class="btn btn-success">
+                                        <i class="fas fa-plus me-1"></i>
+                                        新增教師
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 教師列表 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    教師列表
+                                    <span class="badge bg-primary ms-2" th:text="${totalItems}">0</span>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>工號</th>
+                                                <th>姓名</th>
+                                                <th>性別</th>
+                                                <th>職稱</th>
+                                                <th>狀態</th>
+                                                <th>入職日期</th>
+                                                <th>操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="teacher : ${teachers.content}">
+                                                <td th:text="${teacher.teacherNumber}">工號</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img th:if="${teacher.photoPath}" th:src="${teacher.photoPath}" 
+                                                             class="rounded-circle me-2" width="32" height="32" alt="照片">
+                                                        <span th:text="${teacher.name}">姓名</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span th:if="${teacher.gender == 'MALE'}" class="badge bg-info">男</span>
+                                                    <span th:if="${teacher.gender == 'FEMALE'}" class="badge bg-warning">女</span>
+                                                </td>
+                                                <td>
+                                                    <span th:text="${teacher.title?.displayName}">職稱</span>
+                                                </td>
+                                                <td>
+                                                    <span th:if="${teacher.status == 'ACTIVE'}" class="badge bg-success status-badge">在職</span>
+                                                    <span th:if="${teacher.status == 'INACTIVE'}" class="badge bg-danger status-badge">離職</span>
+                                                    <span th:if="${teacher.status == 'RETIRED'}" class="badge bg-info status-badge">退休</span>
+                                                    <span th:if="${teacher.status == 'SUSPENDED'}" class="badge bg-warning status-badge">停職</span>
+                                                </td>
+                                                <td th:text="${#temporals.format(teacher.hireDate, 'yyyy-MM-dd')}">入職日期</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a th:href="@{/teachers/{id}(id=${teacher.id})}" 
+                                                           class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a th:href="@{/teachers/{id}/edit(id=${teacher.id})}" 
+                                                           class="btn btn-sm btn-outline-warning">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                th:onclick="'deleteTeacher(' + ${teacher.id} + ')'">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- 分頁 -->
+                                <nav th:if="${teachers.totalPages > 1}" aria-label="教師列表分頁">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                                            <a class="page-link" th:href="@{/teachers(page=${currentPage - 1}, size=10, name=${searchName}, teacherNumber=${searchTeacherNumber}, title=${searchTitle})}">
+                                                上一頁
+                                            </a>
+                                        </li>
+                                        <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, teachers.totalPages - 1)}"
+                                            th:classappend="${pageNum == currentPage ? 'active' : ''}">
+                                            <a class="page-link" th:href="@{/teachers(page=${pageNum}, size=10, name=${searchName}, teacherNumber=${searchTeacherNumber}, title=${searchTitle})}"
+                                               th:text="${pageNum + 1}">1</a>
+                                        </li>
+                                        <li class="page-item" th:classappend="${currentPage == teachers.totalPages - 1 ? 'disabled' : ''}">
+                                            <a class="page-link" th:href="@{/teachers(page=${currentPage + 1}, size=10, name=${searchName}, teacherNumber=${searchTeacherNumber}, title=${searchTitle})}">
+                                                下一頁
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function deleteTeacher(teacherId) {
+            if (confirm('確定要刪除這名教師嗎？此操作無法撤銷。')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/teachers/' + teacherId + '/delete';
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // 顯示成功/錯誤消息
+        const successMessage = document.querySelector('.alert-success');
+        const errorMessage = document.querySelector('.alert-danger');
+        
+        if (successMessage) {
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        if (errorMessage) {
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 
