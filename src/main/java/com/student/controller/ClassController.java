@@ -1,7 +1,7 @@
 package com.student.controller;
 
 import com.student.entity.Class;
-import com.student.entity.Teacher;
+
 import com.student.service.ClassService;
 import com.student.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
 
 import javax.validation.Valid;
-import java.util.List;
+
 import java.util.Optional;
 
 @Controller

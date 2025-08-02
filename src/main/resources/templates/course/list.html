@@ -159,9 +159,13 @@
                                            th:value="${searchCode}" placeholder="輸入課程代碼">
                                 </div>
                                 <div class="col-md-3">
-                                    <label for="subject" class="form-label">科目</label>
-                                    <input type="text" class="form-control" id="subject" name="subject" 
-                                           th:value="${searchSubject}" placeholder="輸入科目">
+                                                                    <label for="type" class="form-label">課程類型</label>
+                                <select class="form-select" id="type" name="type" th:value="${searchType}">
+                                    <option value="">全部類型</option>
+                                    <option value="REQUIRED">必修課</option>
+                                    <option value="ELECTIVE">選修課</option>
+                                    <option value="GENERAL">通識課</option>
+                                </select>
                                 </div>
                                 <div class="col-md-2">
                                     <label for="status" class="form-label">狀態</label>
@@ -223,7 +227,9 @@
                                             <tr th:each="course : ${courses.content}">
                                                 <td th:text="${course.courseCode}">課程代碼</td>
                                                 <td th:text="${course.name}">課程名稱</td>
-                                                <td th:text="${course.subject}">科目</td>
+                                                <td>
+                                <span class="badge bg-info" th:text="${course.type?.displayName}">必修</span>
+                            </td>
                                                 <td th:text="${course.teacher?.name}">授課教師</td>
                                                 <td th:text="${course.credits}">學分</td>
                                                 <td>
@@ -255,17 +261,17 @@
                                 <nav th:if="${courses.totalPages > 1}" aria-label="課程列表分頁">
                                     <ul class="pagination justify-content-center">
                                         <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
-                                            <a class="page-link" th:href="@{/courses(page=${currentPage - 1}, size=10, name=${searchName}, code=${searchCode}, subject=${searchSubject}, status=${searchStatus})}">
+                                            <a class="page-link" th:href="@{/courses(page=${currentPage - 1}, size=10, name=${searchName}, code=${searchCode}, type=${searchType}, status=${searchStatus})}">
                                                 上一頁
                                             </a>
                                         </li>
                                         <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, courses.totalPages - 1)}"
                                             th:classappend="${pageNum == currentPage ? 'active' : ''}">
-                                            <a class="page-link" th:href="@{/courses(page=${pageNum}, size=10, name=${searchName}, code=${searchCode}, subject=${searchSubject}, status=${searchStatus})}"
+                                            <a class="page-link" th:href="@{/courses(page=${pageNum}, size=10, name=${searchName}, code=${searchCode}, type=${searchType}, status=${searchStatus})}"
                                                th:text="${pageNum + 1}">1</a>
                                         </li>
                                         <li class="page-item" th:classappend="${currentPage == courses.totalPages - 1 ? 'disabled' : ''}">
-                                            <a class="page-link" th:href="@{/courses(page=${currentPage + 1}, size=10, name=${searchName}, code=${searchCode}, subject=${searchSubject}, status=${searchStatus})}">
+                                            <a class="page-link" th:href="@{/courses(page=${currentPage + 1}, size=10, name=${searchName}, code=${searchCode}, type=${searchType}, status=${searchStatus})}">
                                                 下一頁
                                             </a>
                                         </li>

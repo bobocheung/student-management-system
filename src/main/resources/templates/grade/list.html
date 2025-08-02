@@ -298,7 +298,7 @@
                                                 <i class="fas fa-users me-2"></i>
                                                 涉及學生
                                             </h5>
-                                            <p class="card-text h3" th:text="${#lists.size(grades.content.![student].![id].distinct())}">0</p>
+                                            <p class="card-text h3" th:text="${#sets.size(#sets.toSet(grades.content.![student.id]))}">0</p>
                                         </div>
                                     </div>
                                 </div>
@@ -309,7 +309,7 @@
                                                 <i class="fas fa-book me-2"></i>
                                                 涉及課程
                                             </h5>
-                                            <p class="card-text h3" th:text="${#lists.size(grades.content.![course].![id].distinct())}">0</p>
+                                            <p class="card-text h3" th:text="${#sets.size(#sets.toSet(grades.content.![course.id]))}">0</p>
                                         </div>
                                     </div>
                                 </div>

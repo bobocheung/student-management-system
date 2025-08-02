@@ -20,6 +20,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.ArrayList;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.ByteArrayOutputStream;
 
 @Service
 @Transactional
@@ -317,14 +322,193 @@ public class StudentServiceImpl implements StudentService {
     
     @Override
     public List<Student> importStudentsFromExcel(MultipartFile file) {
-        // Excel導入邏輯，需要實現
-        return null;
+        List<Student> students = new ArrayList<>();
+        
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            
+            // 跳過標題行，從第二行開始讀取
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                Student student = new Student();
+                
+                // 讀取各列數據
+                Cell studentNumberCell = row.getCell(0);
+                if (studentNumberCell != null) {
+                    student.setStudentNumber(getCellStringValue(studentNumberCell));
+                }
+                
+                Cell nameCell = row.getCell(1);
+                if (nameCell != null) {
+                    student.setName(getCellStringValue(nameCell));
+                }
+                
+                Cell genderCell = row.getCell(2);
+                if (genderCell != null) {
+                    String genderStr = getCellStringValue(genderCell);
+                    if ("男".equals(genderStr)) {
+                        student.setGender(Student.Gender.MALE);
+                    } else if ("女".equals(genderStr)) {
+                        student.setGender(Student.Gender.FEMALE);
+                    }
+                }
+                
+                Cell birthDateCell = row.getCell(3);
+                if (birthDateCell != null && birthDateCell.getCellType() == CellType.NUMERIC) {
+                    if (DateUtil.isCellDateFormatted(birthDateCell)) {
+                        student.setBirthDate(birthDateCell.getLocalDateTimeCellValue().toLocalDate());
+                    }
+                }
+                
+                Cell idNumberCell = row.getCell(4);
+                if (idNumberCell != null) {
+                    student.setIdNumber(getCellStringValue(idNumberCell));
+                }
+                
+                Cell phoneCell = row.getCell(5);
+                if (phoneCell != null) {
+                    student.setPhone(getCellStringValue(phoneCell));
+                }
+                
+                Cell emailCell = row.getCell(6);
+                if (emailCell != null) {
+                    student.setEmail(getCellStringValue(emailCell));
+                }
+                
+                Cell addressCell = row.getCell(7);
+                if (addressCell != null) {
+                    student.setAddress(getCellStringValue(addressCell));
+                }
+                
+                // 設置默認值
+                student.setStatus(Student.StudentStatus.ENROLLED);
+                student.setEnrollmentDate(LocalDate.now());
+                
+                // 驗證並保存
+                if (validateStudent(student)) {
+                    try {
+                        students.add(saveStudent(student));
+                    } catch (Exception e) {
+                        // 記錄錯誤但繼續處理其他學生
+                        System.err.println("保存學生失敗: " + student.getName() + ", 錯誤: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Excel導入失敗: " + e.getMessage(), e);
+        }
+        
+        return students;
     }
     
     @Override
     public byte[] exportStudentsToExcel(List<Student> students) {
-        // Excel導出邏輯，需要實現
-        return null;
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("學生信息");
+            
+            // 創建標題行
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {"學號", "姓名", "性別", "出生日期", "身份證號", "電話", "郵箱", "地址", "班級", "狀態", "入學日期"};
+            
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                
+                // 設置標題樣式
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // 填充數據
+            for (int i = 0; i < students.size(); i++) {
+                Student student = students.get(i);
+                Row row = sheet.createRow(i + 1);
+                
+                row.createCell(0).setCellValue(student.getStudentNumber() != null ? student.getStudentNumber() : "");
+                row.createCell(1).setCellValue(student.getName() != null ? student.getName() : "");
+                row.createCell(2).setCellValue(student.getGender() != null ? 
+                    (student.getGender() == Student.Gender.MALE ? "男" : "女") : "");
+                
+                if (student.getBirthDate() != null) {
+                    CellStyle dateStyle = workbook.createCellStyle();
+                    CreationHelper createHelper = workbook.getCreationHelper();
+                    dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                    Cell dateCell = row.createCell(3);
+                    dateCell.setCellValue(student.getBirthDate());
+                    dateCell.setCellStyle(dateStyle);
+                } else {
+                    row.createCell(3).setCellValue("");
+                }
+                
+                row.createCell(4).setCellValue(student.getIdNumber() != null ? student.getIdNumber() : "");
+                row.createCell(5).setCellValue(student.getPhone() != null ? student.getPhone() : "");
+                row.createCell(6).setCellValue(student.getEmail() != null ? student.getEmail() : "");
+                row.createCell(7).setCellValue(student.getAddress() != null ? student.getAddress() : "");
+                row.createCell(8).setCellValue(student.getClassInfo() != null ? student.getClassInfo().getName() : "");
+                row.createCell(9).setCellValue(student.getStatus() != null ? student.getStatus().getDisplayName() : "");
+                
+                if (student.getEnrollmentDate() != null) {
+                    CellStyle dateStyle = workbook.createCellStyle();
+                    CreationHelper createHelper = workbook.getCreationHelper();
+                    dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                    Cell dateCell = row.createCell(10);
+                    dateCell.setCellValue(student.getEnrollmentDate());
+                    dateCell.setCellStyle(dateStyle);
+                } else {
+                    row.createCell(10).setCellValue("");
+                }
+            }
+            
+            // 自動調整列寬
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            // 轉換為字節數組
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Excel導出失敗: " + e.getMessage(), e);
+        }
+    }
+    
+    // 輔助方法：獲取單元格字符串值
+    private String getCellStringValue(Cell cell) {
+        if (cell == null) return "";
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                } else {
+                    return String.valueOf((long) cell.getNumericCellValue());
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return "";
+        }
+    }
+    
+    // 輔助方法：驗證學生信息
+    private boolean validateStudent(Student student) {
+        return student.getStudentNumber() != null && !student.getStudentNumber().trim().isEmpty() &&
+               student.getName() != null && !student.getName().trim().isEmpty() &&
+               validateStudentNumber(student.getStudentNumber()) &&
+               (student.getIdNumber() == null || validateIdNumber(student.getIdNumber())) &&
+               (student.getPhone() == null || validatePhone(student.getPhone())) &&
+               (student.getEmail() == null || validateEmail(student.getEmail()));
     }
     
     @Override

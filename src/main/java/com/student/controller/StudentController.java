@@ -104,7 +104,6 @@ public class StudentController {
     @PostMapping
     public String saveStudent(@Valid @ModelAttribute Student student,
                              BindingResult result,
-                             @RequestParam(required = false) MultipartFile photo,
                              Model model,
                              RedirectAttributes redirectAttributes) {
         
@@ -115,14 +114,7 @@ public class StudentController {
         }
         
         try {
-            // 保存學生信息
             Student savedStudent = studentService.saveStudent(student);
-            
-            // 上傳照片
-            if (photo != null && !photo.isEmpty()) {
-                studentService.uploadPhoto(savedStudent.getId(), photo);
-            }
-            
             redirectAttributes.addFlashAttribute("success", "學生信息保存成功");
             return "redirect:/students/" + savedStudent.getId();
         } catch (Exception e) {
@@ -145,183 +137,50 @@ public class StudentController {
         return "redirect:/students";
     }
     
-    // 學生入學
-    @PostMapping("/{id}/enroll")
-    public String enrollStudent(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            Optional<Student> studentOpt = studentService.findById(id);
-            if (studentOpt.isPresent()) {
-                studentService.enrollStudent(studentOpt.get());
-                redirectAttributes.addFlashAttribute("success", "學生入學成功");
-            }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "入學失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
+    // Excel導入頁面
+    @GetMapping("/import")
+    public String importPage() {
+        return "student/import";
     }
     
-    // 學生休學
-    @PostMapping("/{id}/suspend")
-    public String suspendStudent(@PathVariable Long id, 
-                                @RequestParam String reason,
-                                RedirectAttributes redirectAttributes) {
-        try {
-            studentService.suspendStudent(id, reason);
-            redirectAttributes.addFlashAttribute("success", "學生休學成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "休學失敗：" + e.getMessage());
+    // Excel導入處理
+    @PostMapping("/import")
+    public String importStudents(@RequestParam("file") MultipartFile file, 
+                               RedirectAttributes redirectAttributes) {
+        if (file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "請選擇要導入的Excel文件");
+            return "redirect:/students/import";
         }
-        return "redirect:/students/" + id;
+        
+        try {
+            List<Student> importedStudents = studentService.importStudentsFromExcel(file);
+            redirectAttributes.addFlashAttribute("success", 
+                "成功導入 " + importedStudents.size() + " 條學生記錄");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "導入失敗：" + e.getMessage());
+        }
+        
+        return "redirect:/students";
     }
     
-    // 學生復學
-    @PostMapping("/{id}/resume")
-    public String resumeStudent(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            studentService.resumeStudent(id);
-            redirectAttributes.addFlashAttribute("success", "學生復學成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "復學失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
-    }
-    
-    // 學生畢業
-    @PostMapping("/{id}/graduate")
-    public String graduateStudent(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            studentService.graduateStudent(id);
-            redirectAttributes.addFlashAttribute("success", "學生畢業成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "畢業失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
-    }
-    
-    // 學生退學
-    @PostMapping("/{id}/withdraw")
-    public String withdrawStudent(@PathVariable Long id, 
-                                 @RequestParam String reason,
-                                 RedirectAttributes redirectAttributes) {
-        try {
-            studentService.withdrawStudent(id, reason);
-            redirectAttributes.addFlashAttribute("success", "學生退學成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "退學失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
-    }
-    
-    // 上傳照片
-    @PostMapping("/{id}/photo")
-    public String uploadPhoto(@PathVariable Long id,
-                             @RequestParam("photo") MultipartFile photo,
-                             RedirectAttributes redirectAttributes) {
-        try {
-            studentService.uploadPhoto(id, photo);
-            redirectAttributes.addFlashAttribute("success", "照片上傳成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "照片上傳失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
-    }
-    
-    // 刪除照片
-    @PostMapping("/{id}/photo/delete")
-    public String deletePhoto(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            studentService.deletePhoto(id);
-            redirectAttributes.addFlashAttribute("success", "照片刪除成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "照片刪除失敗：" + e.getMessage());
-        }
-        return "redirect:/students/" + id;
-    }
-    
-    // API接口 - 獲取學生列表
-    @GetMapping("/api")
-    @ResponseBody
-    public ResponseEntity<Page<Student>> getStudentsApi(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+    // Excel導出
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportStudents(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String studentNumber,
             @RequestParam(required = false) Long classId,
             @RequestParam(required = false) Student.StudentStatus status,
             @RequestParam(required = false) Student.Gender gender) {
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        
-        Page<Student> students;
-        if (name != null || studentNumber != null || classId != null || status != null || gender != null) {
-            students = studentService.findByAdvancedSearch(name, studentNumber, classId, status, gender, pageable);
-        } else {
-            students = studentService.findAllStudents(pageable);
-        }
-        
-        return ResponseEntity.ok(students);
-    }
-    
-    // API接口 - 獲取學生詳情
-    @GetMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<Student> getStudentApi(@PathVariable Long id) {
-        Optional<Student> studentOpt = studentService.findById(id);
-        return studentOpt.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-    
-    // API接口 - 創建學生
-    @PostMapping("/api")
-    @ResponseBody
-    public ResponseEntity<Student> createStudentApi(@Valid @RequestBody Student student) {
-        try {
-            Student savedStudent = studentService.saveStudent(student);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedStudent);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
-    // API接口 - 更新學生
-    @PutMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<Student> updateStudentApi(@PathVariable Long id, @Valid @RequestBody Student student) {
-        try {
-            student.setId(id);
-            Student updatedStudent = studentService.saveStudent(student);
-            return ResponseEntity.ok(updatedStudent);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
-    // API接口 - 刪除學生
-    @DeleteMapping("/api/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> deleteStudentApi(@PathVariable Long id) {
-        try {
-            studentService.deleteStudent(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-    
-    // 導出學生數據
-    @GetMapping("/export")
-    public ResponseEntity<byte[]> exportStudents(@RequestParam(required = false) String name,
-                                                @RequestParam(required = false) String studentNumber,
-                                                @RequestParam(required = false) Long classId,
-                                                @RequestParam(required = false) Student.StudentStatus status,
-                                                @RequestParam(required = false) Student.Gender gender) {
         try {
             List<Student> students;
             if (name != null || studentNumber != null || classId != null || status != null || gender != null) {
+                // 如果有搜索條件，導出搜索結果
                 Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
                 Page<Student> studentPage = studentService.findByAdvancedSearch(name, studentNumber, classId, status, gender, pageable);
                 students = studentPage.getContent();
             } else {
+                // 導出所有學生
                 students = studentService.findAllStudents();
             }
             
@@ -329,26 +188,35 @@ public class StudentController {
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDispositionFormData("attachment", "students.xlsx");
+            headers.setContentDispositionFormData("attachment", "students_" + LocalDate.now() + ".xlsx");
             
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(excelData);
+                    
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
-    // 導入學生數據
-    @PostMapping("/import")
-    public String importStudents(@RequestParam("file") MultipartFile file,
-                                RedirectAttributes redirectAttributes) {
+    // 下載Excel模板
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
         try {
-            List<Student> importedStudents = studentService.importStudentsFromExcel(file);
-            redirectAttributes.addFlashAttribute("success", "成功導入 " + importedStudents.size() + " 名學生");
+            // 創建一個空的Excel模板
+            List<Student> emptyList = List.of();
+            byte[] templateData = studentService.exportStudentsToExcel(emptyList);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "student_template.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(templateData);
+                    
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "導入失敗：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return "redirect:/students";
     }
-} 
+}

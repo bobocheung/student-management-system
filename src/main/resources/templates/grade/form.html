@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-TW" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${grade.id != null ? '編輯成績' : '新增成績'} + ' - 學生信息管理系統'">成績管理 - 學生信息管理系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-graduation-cap me-2"></i>
+                學生信息管理系統
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard"><i class="fas fa-home me-1"></i>首頁</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/students"><i class="fas fa-user-graduate me-1"></i>學生管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/teachers"><i class="fas fa-chalkboard-teacher me-1"></i>教師管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/classes"><i class="fas fa-users me-1"></i>班級管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/courses"><i class="fas fa-book me-1"></i>課程管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/grades"><i class="fas fa-chart-line me-1"></i>成績管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/attendance"><i class="fas fa-calendar-check me-1"></i>考勤管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports"><i class="fas fa-chart-bar me-1"></i>報表統計</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span sec:authentication="name">用戶</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user-cog me-2"></i>個人設置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>登出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            <span th:text="${grade.id != null ? '編輯成績' : '新增成績'}">成績管理</span>
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/grades}" th:object="${grade}" method="post" class="needs-validation" novalidate>
+                            <input type="hidden" th:field="*{id}">
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="student" class="form-label">學生 <span class="text-danger">*</span></label>
+                                    <select class="form-select" th:field="*{student.id}" id="student" required>
+                                        <option value="">請選擇學生</option>
+                                        <option th:each="student : ${students}" 
+                                                th:value="${student.id}" 
+                                                th:text="${student.name + ' (' + student.studentNumber + ')'}">
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback">請選擇學生</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="course" class="form-label">課程 <span class="text-danger">*</span></label>
+                                    <select class="form-select" th:field="*{course.id}" id="course" required>
+                                        <option value="">請選擇課程</option>
+                                        <option th:each="course : ${courses}" 
+                                                th:value="${course.id}" 
+                                                th:text="${course.name + ' (' + course.courseCode + ')'}">
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback">請選擇課程</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="regularScore" class="form-label">平時成績 <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" th:field="*{regularScore}" 
+                                           id="regularScore" min="0" max="100" step="0.1" required>
+                                    <div class="invalid-feedback">請輸入有效的平時成績 (0-100)</div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="examScore" class="form-label">考試成績 <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" th:field="*{examScore}" 
+                                           id="examScore" min="0" max="100" step="0.1" required>
+                                    <div class="invalid-feedback">請輸入有效的考試成績 (0-100)</div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="totalScore" class="form-label">總成績 <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" th:field="*{totalScore}" 
+                                           id="totalScore" min="0" max="100" step="0.1" required readonly>
+                                    <div class="invalid-feedback">總成績將自動計算</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="semester" class="form-label">學期 <span class="text-danger">*</span></label>
+                                    <select class="form-select" th:field="*{semester}" id="semester" required>
+                                        <option value="">請選擇學期</option>
+                                        <option value="2024-1">2024年第一學期</option>
+                                        <option value="2024-2">2024年第二學期</option>
+                                        <option value="2025-1">2025年第一學期</option>
+                                        <option value="2025-2">2025年第二學期</option>
+                                    </select>
+                                    <div class="invalid-feedback">請選擇學期</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="examType" class="form-label">考試類型</label>
+                                    <select class="form-select" th:field="*{examType}" id="examType">
+                                        <option value="">請選擇考試類型</option>
+                                        <option value="期中考試">期中考試</option>
+                                        <option value="期末考試">期末考試</option>
+                                        <option value="平時測驗">平時測驗</option>
+                                        <option value="作業成績">作業成績</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="remark" class="form-label">備註</label>
+                                <textarea class="form-control" th:field="*{remark}" id="remark" rows="3" 
+                                          placeholder="請輸入備註信息"></textarea>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="/grades" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>
+                                    <span th:text="${grade.id != null ? '更新成績' : '添加成績'}">保存</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // 自動計算總成績
+        function calculateTotalScore() {
+            const regularScore = parseFloat(document.getElementById('regularScore').value) || 0;
+            const examScore = parseFloat(document.getElementById('examScore').value) || 0;
+            const totalScore = (regularScore * 0.4 + examScore * 0.6).toFixed(1);
+            document.getElementById('totalScore').value = totalScore;
+        }
+        
+        document.getElementById('regularScore').addEventListener('input', calculateTotalScore);
+        document.getElementById('examScore').addEventListener('input', calculateTotalScore);
+        
+        // 頁面加載時計算一次
+        document.addEventListener('DOMContentLoaded', calculateTotalScore);
+    </script>
+</body>
+</html>

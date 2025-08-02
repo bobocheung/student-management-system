@@ -104,4 +104,6 @@ spring-boot-*.log
 # Application properties
 application-local.yml
 application-dev.yml
-application-prod.yml 
+application-prod.yml app.log
+cookies.txt
+*.sh

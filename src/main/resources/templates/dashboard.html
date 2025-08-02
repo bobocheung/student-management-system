@@ -224,8 +224,64 @@
                                     <i class="fas fa-chalkboard-teacher"></i>
                                 </div>
                                 <div>
-                                    <div class="stat-number text-warning">25</div>
+                                    <div class="stat-number text-warning" th:text="${totalTeachers ?: 0}">0</div>
                                     <div class="text-muted">在職教師</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二行統計卡片 -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="stat-card p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-secondary me-3">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number text-secondary" th:text="${totalCourses ?: 0}">0</div>
+                                    <div class="text-muted">開設課程</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="stat-card p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-danger me-3">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number text-danger" th:text="${totalGrades ?: 0}">0</div>
+                                    <div class="text-muted">成績記錄</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="stat-card p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-dark me-3">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number text-dark">今日考勤</div>
+                                    <div class="text-muted">100%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="stat-card p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-light me-3">
+                                    <i class="fas fa-graduation-cap text-dark"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-number text-dark">平均分</div>
+                                    <div class="text-muted">85.5</div>
                                 </div>
                             </div>
                         </div>
